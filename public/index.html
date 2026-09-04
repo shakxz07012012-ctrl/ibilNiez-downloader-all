@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b0f">
+  <title>GetDL Web</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#0b0b0f;color:#fff;font-family:Arial,Helvetica,sans-serif;min-height:100vh}
+    .wrap{width:min(760px,100%);margin:auto;padding:28px 16px 48px}
+    .hero{text-align:center;padding:32px 8px 22px}
+    .logo{width:64px;height:64px;margin:0 auto 16px;border-radius:18px;background:#fff;color:#0b0b0f;display:grid;place-items:center;font-size:28px;font-weight:900}
+    h1{font-size:32px;margin:0 0 8px}
+    .sub{color:#a7a7b0;margin:0;line-height:1.5}
+    .card{background:#14141a;border:1px solid #292933;border-radius:18px;padding:16px}
+    .row{display:flex;gap:10px}
+    input{width:100%;background:#0e0e13;color:#fff;border:1px solid #343440;border-radius:12px;padding:15px;font-size:15px;outline:none}
+    input:focus{border-color:#777}
+    button{border:0;border-radius:12px;padding:0 20px;background:#fff;color:#0b0b0f;font-weight:800;font-size:15px;cursor:pointer;min-width:115px}
+    button:disabled{opacity:.55;cursor:not-allowed}
+    .hint{font-size:12px;color:#777;margin:10px 2px 0}
+    .status{margin-top:14px;padding:13px;border-radius:12px;background:#101017;color:#aaa;display:none;line-height:1.45}
+    .status.show{display:block}
+    .status.error{color:#ff9b9b;border:1px solid #4b2727}
+    .result{margin-top:16px;display:none}
+    .result.show{display:block}
+    .result h2{font-size:18px;margin:0 0 12px}
+    pre{margin:0;background:#09090d;border:1px solid #292933;border-radius:12px;padding:14px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:#d7d7df;font-size:12px;line-height:1.5}
+    .footer{text-align:center;color:#666;font-size:12px;margin-top:24px}
+    @media(max-width:560px){.row{flex-direction:column}button{height:48px}.hero h1{font-size:28px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div class="logo">DL</div>
+      <h1>GetDL Web</h1>
+      <p class="sub">Masukkan link media untuk mengambil informasi download.</p>
+    </section>
+
+    <section class="card">
+      <form id="form">
+        <div class="row">
+          <input id="url" type="url" placeholder="https://..." autocomplete="off" required>
+          <button id="btn" type="submit">Download</button>
+        </div>
+        <div class="hint">Gunakan URL yang kamu punya izin untuk unduh.</div>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <div id="result" class="result">
+        <h2>Hasil API</h2>
+        <pre id="output"></pre>
+      </div>
+    </section>
+
+    <div class="footer">GetDL Web • Backend Node.js + Express</div>
+  </main>
+
+  <script>
+    const form = document.getElementById("form");
+    const input = document.getElementById("url");
+    const btn = document.getElementById("btn");
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const output = document.getElementById("output");
+
+    function setStatus(text, error = false) {
+      status.textContent = text;
+      status.className = "status show" + (error ? " error" : "");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const url = input.value.trim();
+      if (!url) return;
+
+      btn.disabled = true;
+      btn.textContent = "Loading...";
+      result.classList.remove("show");
+      setStatus("Menghubungi API...");
+
+      try {
+        const response = await fetch("/api/download", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ url })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Request gagal.");
+        }
+
+        output.textContent = JSON.stringify(data, null, 2);
+        result.classList.add("show");
+        setStatus("Berhasil mendapatkan respons API.");
+      } catch (err) {
+        setStatus(err.message || "Terjadi kesalahan.", true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Download";
+      }
+    });
+  </script>
+</body>
+</html>
